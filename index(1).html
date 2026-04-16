@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0a0907">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>For Fork's Sake</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg, #0a0907);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+}
+
+/* ── Screen fills full viewport on mobile ── */
+.screen {
+  background: var(--bg, #0a0907);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
+
+/* ── iPhone 13 Pro Max frame in desktop / preview ── */
+@media (min-width: 500px) {
+  html, body { background: #1a1612; overflow: auto; height: 100%; display: flex; align-items: center; justify-content: center; }
+  body { padding: 2rem 0; }
+  .phone-frame {
+    position: relative;
+    width: 390px;
+    background: #111;
+    border-radius: 50px;
+    box-shadow: inset 0 0 0 1.5px #333, inset 0 0 0 3px #111, 0 24px 60px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+    transform: scale(0.78);
+    transform-origin: top center;
+    margin-bottom: calc(-812px * 0.22);
+  }
+  .phone-frame .btn-right-top, .phone-frame .btn-right-bot { position: absolute; right: -3px; width: 4px; background: #222; border-radius: 0 2px 2px 0; }
+  .phone-frame .btn-right-top { top: 140px; height: 72px; }
+  .phone-frame .btn-right-bot { top: 230px; height: 72px; }
+  .phone-frame .btn-left-1, .phone-frame .btn-left-2, .phone-frame .btn-left-3 { position: absolute; left: -3px; width: 4px; background: #222; border-radius: 2px 0 0 2px; }
+  .phone-frame .btn-left-1 { top: 120px; height: 40px; }
+  .phone-frame .btn-left-2 { top: 175px; height: 64px; }
+  .phone-frame .btn-left-3 { top: 255px; height: 64px; }
+  .phone-frame .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 30px; background: #111; border-radius: 0 0 20px 20px; z-index: 200; }
+  .screen {
+    position: relative;
+    width: 374px;
+    height: 812px;
+    border-radius: 42px;
+    margin: 8px;
+    top: auto; left: auto; right: auto; bottom: auto;
+    overflow: hidden;
+  }
+  #main-view { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+}
+
+/* ── Header ── */
+.app-header {
+  padding: 8px 18px 12px;
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.app-title { font-size: 20px; font-weight: 500; color: var(--text1); }
+.week-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 10px; margin-right: 4px; }
+.nav-pill {
+  display: flex; align-items: center;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 99px; overflow: hidden;
+}
+.pill-btn {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 13px; cursor: pointer;
+}
+.pill-btn svg { width: 18px; height: 18px; stroke: var(--accent); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.freezer-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #0a1a2a; border: 1.5px solid #1a3a5a;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: opacity 0.15s;
+  line-height: 1; font-size: 18px;
+  padding: 0; text-align: center;
+}
+.freezer-btn:active { opacity: 0.7; }
+.freezer-badge-count {
+  position: absolute; top: -3px; right: -3px;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  font-family: -apple-system, sans-serif;
+}
+.pill-btn.disabled { opacity: 0.3; pointer-events: none; }
+.pill-divider { width: 0.5px; height: 22px; background: var(--border2); }
+.more-btn { font-size: 20px; color: var(--text3); cursor: pointer; padding: 4px 2px; user-select: none; letter-spacing: 1px; line-height: 1; }
+
+/* ── Planner ── */
+.planner-body {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 10px 12px 8px; min-height: 0;
+}
+.week-row { display: grid; gap: 6px; flex: 1; min-height: 0; }
+.row-top { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-bottom: 10px; }
+.row-bottom { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 10px; }
+.divider-line { height: 1.5px; background: var(--border); flex-shrink: 0; margin: 0 -12px; }
+.day-col { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+/* ── Day header tile ── */
+.day-head {
+  background: var(--dh-bg); border: 1.5px solid var(--dh-border);
+  border-radius: 10px; padding: 6px 4px 5px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  flex-shrink: 0;
+}
+.day-head.today { background: var(--today-bg); border-color: var(--today-bg); }
+.day-lbl { font-size: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); }
+.day-head.today .day-lbl { color: #fad4c2; }
+.day-num { font-size: 15px; font-weight: 500; color: var(--text2); line-height: 1; }
+.day-head.today .day-num { color: var(--today-txt); }
+
+/* ── Meal slots ── */
+.slot {
+  border-radius: 10px; border: 0.5px solid var(--border);
+  background: var(--slot-bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 4px 4px; flex: 1; min-height: 0;
+  overflow: hidden; gap: 4px; cursor: pointer;
+  user-select: none; -webkit-user-select: none;
+  transition: opacity 0.15s;
+}
+.slot:active { opacity: 0.75; }
+.slot.empty {
+  background: var(--slot-e);
+  border: 0.5px dashed var(--border);
+}
+.slot.empty.drag-over {
+  background: var(--drag-ov);
+  border: 1.5px dashed var(--accent);
+}
+.pool-item.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+.slot.stale { background: var(--stale-bg); border-color: var(--stale-b); }
+
+.slot.filled-brekky { border-top: 2.5px solid #D4922A; }
+.slot.filled-lunch   { border-top: 2.5px solid #4A8FA8; }
+.slot.filled-dinner  { border-top: 2.5px solid var(--accent); }
+
+.slot-type { font-size: 7px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; }
+.slot.filled-brekky .slot-type { color: #D4922A; }
+.slot.filled-lunch .slot-type   { color: #4A8FA8; }
+.slot.filled-dinner .slot-type  { color: var(--accent); }
+.slot.stale .slot-type { color: var(--stale-t); }
+
+.slot-emoji { font-size: 34px; line-height: 1; }
+.slot-name { font-size: 11px; font-weight: 500; color: var(--text2); text-align: center; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 3px; line-height: 1.2; }
+.slot.stale .slot-name { color: var(--stale-t); }
+.empty-plus { font-size: 24px; color: var(--border2); line-height: 1; }
+
+/* ── Pool section ── */
+.pool-section {
+  background: var(--pool-bg);
+  border-top: 1.5px solid var(--border);
+  padding: 12px 12px 0;
+  flex-shrink: 0;
+}
+.pool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.pool-title { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); }
+.pool-add {
+  width: 26px; height: 26px;
+  background: var(--accent); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+  transition: opacity 0.15s;
+}
+.pool-add:active { opacity: 0.75; }
+
+.pool-scroll-wrap { overflow: hidden; height: 90px; }
+.pool-scroll {
+  display: flex; overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none; -ms-overflow-style: none;
+  height: 100%;
+}
+.pool-scroll::-webkit-scrollbar { display: none; }
+.pool-page {
+  display: flex; gap: 5px;
+  flex-shrink: 0; scroll-snap-align: start;
+  width: 100%; height: 100%;
+}
+.pool-item {
+  flex: 1; min-width: 0;
+  background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: 12px; padding: 12px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: grab; user-select: none;
+  transition: opacity 0.15s;
+}
+.pool-item:active { opacity: 0.7; }
+.pool-item.phantom { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
+.pool-emoji { font-size: 26px; line-height: 1; }
+.pool-name { font-size: 8px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; padding: 0 2px; }
+.pool-serves { font-size: 9px; color: var(--accent); font-weight: 500; }
+
+.pool-empty-msg { width: 100%; text-align: center; font-size: 11px; color: var(--text4); height: 100%; display: flex; align-items: center; justify-content: center; }
+
+.pool-dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0 10px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); }
+.dot.active { background: var(--accent); }
+
+/* ── Drag and drop ── */
+.drag-ghost {
+  position: fixed; z-index: 999; pointer-events: none;
+  background: var(--surface2); border: 1.5px solid var(--accent);
+  border-radius: 12px; padding: 12px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 70px; opacity: 0.92;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.drag-ghost .pool-emoji { font-size: 26px; }
+.drag-ghost .pool-name { font-size: 8px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.slot.drop-target { border-color: var(--accent); background: var(--surface2); }
+
+/* ── Sheet overlay ── */
+.sheet-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 100;
+  display: flex; align-items: flex-end;
+}
+.sheet {
+  background: var(--surface); border-radius: 26px 26px 0 0;
+  padding: 0 20px 36px; width: 100%;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  height: calc(100dvh - 130px);
+  overflow-y: auto;
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 38px; height: 4px; background: var(--border2); border-radius: 99px; margin: 14px auto 22px; }
+.sheet-title { font-size: 17px; font-weight: 500; color: var(--text1); margin-bottom: 24px; }
+
+/* ── Form fields ── */
+.field { margin-bottom: 22px; }
+.field-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 5px; }
+.field-input {
+  width: 100%; background: var(--surface2);
+  border: 1.5px solid var(--border2); border-radius: 12px;
+  padding: 14px 16px; font-size: 14px; color: var(--text1);
+  outline: none; font-family: inherit;
+  -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text3); }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; }
+.serves-row {
+  display: flex; align-items: center;
+  background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: 12px; overflow: hidden; height: 52px;
+}
+.serves-btn {
+  width: 44px; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--accent);
+  cursor: pointer; user-select: none; flex-shrink: 0;
+}
+.serves-btn:active { background: var(--border); }
+.serves-val { flex: 1; text-align: center; font-size: 16px; font-weight: 500; color: var(--text1); }
+.serves-div-v { width: 0.5px; height: 24px; background: var(--border2); }
+.submit-btn {
+  width: 100%; background: var(--accent); color: #fff;
+  font-size: 15px; font-weight: 500;
+  padding: 18px; border-radius: 14px;
+  text-align: center; cursor: pointer; margin-top: 10px;
+  user-select: none; transition: opacity 0.15s;
+}
+.submit-btn:active { opacity: 0.8; }
+
+/* ── Emoji picker ── */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  padding: 10px 8px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.emoji-opt {
+  font-size: 22px; line-height: 1;
+  text-align: center; padding: 4px 0;
+  border-radius: 8px; cursor: pointer;
+  transition: background 0.1s;
+}
+.emoji-opt:active { background: var(--border2); }
+.emoji-opt.selected { background: var(--drag-ov); }
+.picker-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 0; border-bottom: 0.5px solid var(--border);
+  cursor: pointer; transition: opacity 0.15s;
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:active { opacity: 0.6; }
+.picker-emoji { font-size: 24px; line-height: 1; }
+.picker-info { flex: 1; }
+.picker-name { font-size: 14px; font-weight: 500; color: var(--text1); }
+.picker-serves { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.picker-arrow { font-size: 18px; color: var(--border2); }
+.picker-empty { font-size: 13px; color: var(--text3); text-align: center; padding: 20px 0; }
+
+/* ── Prompt overlay ── */
+.prompt-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.prompt-box {
+  background: var(--surface); border-radius: 20px;
+  border: 0.5px solid var(--border2);
+  padding: 24px 20px 20px; width: 100%;
+}
+.prompt-title { font-size: 16px; font-weight: 500; color: var(--text1); text-align: center; margin-bottom: 5px; }
+.prompt-sub { font-size: 13px; color: var(--text3); text-align: center; margin-bottom: 20px; }
+.prompt-btns { display: flex; gap: 8px; }
+.prompt-btn {
+  flex: 1; padding: 13px; border-radius: 12px;
+  font-size: 14px; font-weight: 500; text-align: center;
+  cursor: pointer; user-select: none; transition: opacity 0.15s;
+}
+.prompt-btn:active { opacity: 0.75; }
+.prompt-btn.primary { background: var(--accent); color: #fff; }
+.prompt-btn.secondary { background: var(--surface2); color: var(--text2); }
+.prompt-btn.danger { background: var(--stale-bg); color: var(--accent); }
+.prompt-checkbox {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px; font-size: 12px; color: var(--text3); cursor: pointer;
+}
+.prompt-checkbox input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
+/* ── Drag ghost ── */
+#drag-ghost {
+  position: fixed; z-index: 999; pointer-events: none;
+  background: var(--surface2); border: 1.5px solid var(--accent);
+  border-radius: 12px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: var(--text1); opacity: 0.95;
+  transform: translate(-50%, -50%) scale(1.08);
+  transition: transform 0.1s;
+  white-space: nowrap;
+}
+.freezer-badge {
+  font-size: 10px; color: #5ab4f0; font-weight: 500;
+  background: #0a1a2a; border-radius: 4px; padding: 1px 5px;
+  margin-left: 4px; vertical-align: middle;
+}
+.picker-section-label {
+  font-size: 10px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text3);
+  padding: 10px 0 6px; border-bottom: 0.5px solid var(--border);
+  margin-bottom: 4px;
+}
+.menu-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 100;
+}
+.menu-dropdown {
+  position: absolute; top: 76px; right: 16px;
+  background: var(--surface); border-radius: 14px;
+  border: 0.5px solid var(--border2); overflow: hidden;
+  min-width: 210px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.menu-item {
+  padding: 14px 16px; font-size: 13px; color: var(--text2);
+  cursor: pointer; border-bottom: 0.5px solid var(--border);
+  transition: background 0.1s;
+}
+.menu-overlay { display: none; }
+/* ── Drawer ── */
+#main-view {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), filter 0.28s;
+  will-change: transform;
+}
+#main-view.drawer-open {
+  transform: translateX(-75px);
+  filter: brightness(0.38);
+  pointer-events: none;
+}
+#drawer-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0);
+  z-index: 200; pointer-events: none;
+  transition: background 0.28s;
+}
+#drawer-overlay.open {
+  background: rgba(0,0,0,0.65);
+  pointer-events: all;
+}
+#drawer {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 285px;
+  background: #1e1610;
+  border-left: 0.5px solid #36281a;
+  z-index: 205;
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.28s;
+  will-change: transform;
+  box-shadow: none;
+  overflow-y: auto;
+}
+#drawer.open { transform: translateX(0); box-shadow: -20px 0 60px rgba(0,0,0,0.6); }
+.drawer-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 99px; margin: 14px auto 20px; flex-shrink: 0; }
+.drawer-section-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text4); margin-bottom: 6px; padding: 14px 18px 0; }
+.drawer-item {
+  padding: 13px 18px; font-size: 13px; color: var(--text2);
+  cursor: pointer; transition: background 0.1s; margin: 0 8px 2px;
+  border-radius: 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-item:active { background: var(--surface2); }
+.drawer-item.danger { color: #F0841A; }
+.drawer-item.disabled { color: #46382a; pointer-events: none; }
+.drawer-divider { height: 0.5px; background: var(--border); margin: 10px 18px; }
+.theme-options { display: flex; flex-direction: column; gap: 5px; padding: 4px 8px 4px; }
+.theme-opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+  border: 1.5px solid #36281a; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.theme-opt.active { border-color: #F0841A; background: #261e14; }
+.theme-opt:active { background: #261e14; }
+.theme-swatch { width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid rgba(255,255,255,0.08); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+.theme-swatch-top { flex: 1; }
+.theme-swatch-bot { height: 8px; }
+.theme-name { font-size: 13px; font-weight: 500; color: #ecdcc8; }
+.theme-tick { font-size: 16px; color: #F0841A; margin-left: auto; opacity: 0; line-height: 1; }
+.theme-opt.active .theme-tick { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="notch"></div>
+  <div class="btn-right-top"></div><div class="btn-right-bot"></div>
+  <div class="btn-left-1"></div><div class="btn-left-2"></div><div class="btn-left-3"></div>
+<div class="screen" id="screen">
+<div id="main-view">
+
+    <div class="app-header">
+      <div class="header-row">
+        <div>
+          <div class="app-title">For Fork's Sake</div>
+          <div class="week-label" id="weekLabel"></div>
+        </div>
+        <div class="header-right">
+          <div style="position:relative;flex-shrink:0;">
+            <div class="freezer-btn" id="btnFreezer">❄️</div>
+            <div class="freezer-badge-count" id="freezerBadge" style="display:none;"></div>
+          </div>
+          <div class="nav-pill">
+            <div class="pill-btn" id="btnPrev">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="pill-divider"></div>
+            <div class="pill-btn" id="btnNext">
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <div class="more-btn" id="btnMore">···</div>
+        </div>
+      </div>
+    </div>
+    <div class="planner-body">
+      <div class="week-row row-top" id="rowTop"></div>
+      <div class="divider-line"></div>
+      <div class="week-row row-bottom" id="rowBottom"></div>
+    </div>
+    <div class="pool-section">
+      <div class="pool-header">
+        <div class="pool-title">Fridge Pool</div>
+        <div class="pool-add" id="btnPoolAdd">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      </div>
+      <div class="pool-scroll-wrap">
+        <div class="pool-scroll" id="poolScroll"></div>
+      </div>
+      <div class="pool-dots" id="poolDots"></div>
+    </div>
+
+</div><!-- /main-view -->
+
+<!-- Drawer overlay -->
+<div id="drawer-overlay"></div>
+
+<!-- Settings drawer -->
+<div id="drawer">
+  <div class="drawer-handle"></div>
+
+  <div class="drawer-section-label">Theme</div>
+  <div class="theme-options" id="themeOptions">
+    <div class="theme-opt active" data-theme="espresso">
+      <div class="theme-swatch"><div class="theme-swatch-top" style="background:#0a0907;"></div><div class="theme-swatch-bot" style="background:#F0841A;"></div></div>
+      <div class="theme-name">Espresso</div>
+      <div class="theme-tick">✓</div>
+    </div>
+    <div class="theme-opt" data-theme="dark-grey">
+      <div class="theme-swatch"><div class="theme-swatch-top" style="background:#2e2e2e;"></div><div class="theme-swatch-bot" style="background:#aaa;"></div></div>
+      <div class="theme-name">Dark grey</div>
+      <div class="theme-tick">✓</div>
+    </div>
+    <div class="theme-opt" data-theme="mid-grey">
+      <div class="theme-swatch"><div class="theme-swatch-top" style="background:#c8c4be;"></div><div class="theme-swatch-bot" style="background:#444;"></div></div>
+      <div class="theme-name">Mid grey</div>
+      <div class="theme-tick">✓</div>
+    </div>
+    <div class="theme-opt" data-theme="light-grey">
+      <div class="theme-swatch"><div class="theme-swatch-top" style="background:#e8e8e8;"></div><div class="theme-swatch-bot" style="background:#111;"></div></div>
+      <div class="theme-name">Light grey</div>
+      <div class="theme-tick">✓</div>
+    </div>
+  </div>
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-section-label">Planner</div>
+  <div class="drawer-item danger" id="dClearWeek">Clear this week</div>
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-section-label">Fridge</div>
+  <div class="drawer-item danger" id="dResetPool">Reset fridge pool</div>
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-section-label">Data</div>
+  <div class="drawer-item" id="dExport">Export my data</div>
+  <div class="drawer-item" id="dImport">Import data</div>
+  <input type="file" id="importFile" accept=".json" style="display:none;">
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-section-label">Settings</div>
+  <div class="drawer-item" id="dResetPrompt">Reset long press prompt</div>
+</div>
+
+</div><!-- /screen -->
+</div><!-- /phone-frame -->
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const S = {
+  meals: [],         // [{id, name, emoji, totalServes}]
+  freezer: [],       // [{id, name, emoji, serves}] — persists forever
+  slots: {},         // {"YYYY-MM-DD-type": {mealId, isStale, fromFreezer}}
+  weekOffset: 0,
+  suppressPrompt: false,
+  lastOpenedDate: null,
+  theme: 'espresso'
+};
+
+const TYPES = ['brekky', 'lunch', 'dinner'];
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ─────────────────────────────────────────────
+// PERSISTENCE
+// ─────────────────────────────────────────────
+function save() {
+  try {
+    localStorage.setItem('mpp_v1', JSON.stringify({
+      meals: S.meals,
+      freezer: S.freezer,
+      slots: S.slots,
+      suppressPrompt: S.suppressPrompt,
+      lastOpenedDate: S.lastOpenedDate,
+      theme: S.theme
+    }));
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('mpp_v1') || 'null');
+    if (d) {
+      S.meals = d.meals || [];
+      S.freezer = d.freezer || [];
+      S.slots = d.slots || {};
+      S.suppressPrompt = d.suppressPrompt || false;
+      S.lastOpenedDate = d.lastOpenedDate || null;
+      S.theme = d.theme || 'espresso';
+    }
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// DATE UTILS
+// ─────────────────────────────────────────────
+function getMonday(offset) {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diff + offset * 7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function toStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function todayStr() {
+  return toStr(new Date());
+}
+
+function slotKey(dateStr, type) {
+  return `${dateStr}-${type}`;
+}
+
+function dateFromKey(key) {
+  return key.slice(0, 10);
+}
+
+function weekLabel(mon) {
+  const sun = addDays(mon, 6);
+  const fmt = d => d.toLocaleDateString('en-AU', {month:'short', day:'numeric'});
+  return `${fmt(mon)} – ${fmt(sun)}, ${sun.getFullYear()}`;
+}
+
+// ─────────────────────────────────────────────
+// POOL UTILS
+// ─────────────────────────────────────────────
+function assignedCount(mealId) {
+  return Object.values(S.slots).filter(s => s.mealId === mealId).length;
+}
+
+function unassignedCount(mealId) {
+  const m = S.meals.find(m => m.id === mealId);
+  if (!m) return 0;
+  return Math.max(0, m.totalServes - assignedCount(mealId));
+}
+
+function poolMeals() {
+  return S.meals.filter(m => unassignedCount(m.id) > 0);
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// ─────────────────────────────────────────────
+// STALE CHECK
+// ─────────────────────────────────────────────
+function checkStale() {
+  const today = todayStr();
+  Object.keys(S.slots).forEach(key => {
+    const d = dateFromKey(key);
+    if (d < today && S.slots[key].mealId) {
+      S.slots[key].isStale = true;
+    }
+  });
+  S.lastOpenedDate = today;
+  save();
+}
+
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function render() {
+  // Clamp offset
+  S.weekOffset = Math.max(0, Math.min(3, S.weekOffset));
+  document.getElementById('btnPrev').classList.toggle('disabled', S.weekOffset === 0);
+  document.getElementById('btnNext').classList.toggle('disabled', S.weekOffset === 3);
+  renderWeekLabel();
+  renderGrid();
+  renderPool();
+  updateFreezerBadge();
+}
+
+function updateFreezerBadge() {
+  const total = S.freezer.reduce((sum, m) => sum + (m.serves || 0), 0);
+  const badge = document.getElementById('freezerBadge');
+  if (total > 0) {
+    badge.textContent = total > 99 ? '99+' : total;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderWeekLabel() {
+  document.getElementById('weekLabel').textContent = weekLabel(getMonday(S.weekOffset));
+}
+
+function renderGrid() {
+  const mon = getMonday(S.weekOffset);
+  const today = todayStr();
+  const top = document.getElementById('rowTop');
+  const bot = document.getElementById('rowBottom');
+  top.innerHTML = '';
+  bot.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(mon, i);
+    const dateStr = toStr(date);
+    const isToday = dateStr === today;
+
+    const col = document.createElement('div');
+    col.className = 'day-col';
+
+    // Day header
+    const head = document.createElement('div');
+    head.className = 'day-head' + (isToday ? ' today' : '');
+    head.innerHTML = `<div class="day-lbl">${DAYS[i]}</div><div class="day-num">${date.getDate()}</div>`;
+    col.appendChild(head);
+
+    // Slots
+    TYPES.forEach(type => {
+      const key = slotKey(dateStr, type);
+      const slotData = S.slots[key];
+      const meal = slotData?.mealId
+        ? (S.meals.find(m => m.id === slotData.mealId) || S.freezer.find(m => m.id === slotData.mealId))
+        : null;
+      const stale = !!(slotData?.isStale && meal);
+
+      const el = document.createElement('div');
+
+      if (meal) {
+        el.className = `slot filled-${type}${stale ? ' stale' : ''}`;
+        el.innerHTML = `
+          <div class="slot-type">${type}</div>
+          <div class="slot-emoji">${meal.emoji}</div>
+          <div class="slot-name">${meal.name}</div>`;
+
+        // Tap stale → ate it?
+        el.addEventListener('click', () => {
+          if (stale) showStalePrompt(key, meal);
+        });
+        // Long press → clear prompt
+        longPress(el, () => showClearPrompt(key));
+      } else {
+        el.className = 'slot empty';
+        el.dataset.key = key;
+        el.dataset.type = type;
+        el.innerHTML = `<div class="empty-plus">+</div>`;
+        el.addEventListener('click', () => showPicker(key, type));
+      }
+
+      col.appendChild(el);
+    });
+
+    (i < 4 ? top : bot).appendChild(col);
+  }
+}
+
+function renderPool() {
+  const scroll = document.getElementById('poolScroll');
+  const dots   = document.getElementById('poolDots');
+  scroll.innerHTML = '';
+  dots.innerHTML   = '';
+
+  const available = poolMeals();
+
+  if (available.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'pool-empty-msg';
+    msg.textContent = 'What\'s on the menu? — tap + to add';
+    scroll.appendChild(msg);
+    return;
+  }
+
+  // Build pages of 5
+  const pages = [];
+  for (let i = 0; i < available.length; i += 5) pages.push(available.slice(i, i+5));
+
+  pages.forEach((page, pi) => {
+    const pageEl = document.createElement('div');
+    pageEl.className = 'pool-page';
+
+    // Pad to 5
+    const padded = [...page];
+    while (padded.length < 5) padded.push(null);
+
+    padded.forEach(meal => {
+      const item = document.createElement('div');
+      if (!meal) {
+        item.className = 'pool-item phantom';
+      } else {
+        item.className = 'pool-item';
+        item.innerHTML = `
+          <div class="pool-emoji">${meal.emoji}</div>
+          <div class="pool-name">${meal.name}</div>
+          <div class="pool-serves">${unassignedCount(meal.id)} left</div>`;
+        longPress(item, () => showPoolRemove(meal));
+        initDrag(item, meal);
+      }
+      pageEl.appendChild(item);
+    });
+
+    scroll.appendChild(pageEl);
+
+    // Dot
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (pi === 0 ? ' active' : '');
+    dots.appendChild(dot);
+  });
+
+  if (pages.length <= 1) dots.style.visibility = 'hidden';
+  else dots.style.visibility = '';
+}
+
+// ─────────────────────────────────────────────
+// POOL SCROLL DOTS (set up once)
+// ─────────────────────────────────────────────
+document.getElementById('poolScroll').addEventListener('scroll', function() {
+  const w = this.offsetWidth;
+  if (!w) return;
+  const page = Math.round(this.scrollLeft / w);
+  document.querySelectorAll('#poolDots .dot').forEach((d,i) => {
+    d.classList.toggle('active', i === page);
+  });
+}, { passive: true });
+
+// ─────────────────────────────────────────────
+// LONG PRESS
+// ─────────────────────────────────────────────
+function longPress(el, cb) {
+  let timer = null;
+  let moved = false;
+
+  const start = () => { moved = false; timer = setTimeout(() => { if (!moved && !dragActive) cb(); }, 550); };
+  const cancel = () => clearTimeout(timer);
+  const move = () => { moved = true; clearTimeout(timer); };
+
+  el.addEventListener('pointerdown', start);
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', cancel);
+  el.addEventListener('pointercancel', cancel);
+}
+
+
+// ─────────────────────────────────────────────
+// DRAG AND DROP (Pointer Events, no capture)
+// ─────────────────────────────────────────────
+let dragMeal = null;
+let dragGhost = null;
+let currentDropTarget = null;
+let dragActive = false;
+
+function initDrag(el, meal) {
+  let startX, startY;
+
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    dragActive = false;
+
+    function onMove(e) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      if (!dragActive && Math.sqrt(dx*dx + dy*dy) > 8) {
+        dragActive = true;
+        dragMeal = meal;
+        el.classList.add('dragging');
+        dragGhost = document.createElement('div');
+        dragGhost.id = 'drag-ghost';
+        dragGhost.innerHTML = `<span>${meal.emoji}</span><span>${meal.name}</span>`;
+        document.body.appendChild(dragGhost);
+      }
+
+      if (!dragActive) return;
+
+      dragGhost.style.left = e.clientX + 'px';
+      dragGhost.style.top  = e.clientY + 'px';
+
+      dragGhost.style.visibility = 'hidden';
+      const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+      dragGhost.style.visibility = '';
+
+      const target = elUnder ? elUnder.closest('.slot.empty') : null;
+      if (target !== currentDropTarget) {
+        if (currentDropTarget) currentDropTarget.classList.remove('drag-over');
+        currentDropTarget = target;
+        if (currentDropTarget) currentDropTarget.classList.add('drag-over');
+      }
+    }
+
+    function onUp(e) {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+
+      el.classList.remove('dragging');
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      if (currentDropTarget) currentDropTarget.classList.remove('drag-over');
+
+      if (dragActive && currentDropTarget && dragMeal) {
+        const key = currentDropTarget.dataset.key;
+        if (key) {
+          if (!S.slots[key]) S.slots[key] = {};
+          S.slots[key].mealId = dragMeal.id;
+          S.slots[key].isStale = false;
+          save(); render();
+        }
+      }
+
+      currentDropTarget = null;
+      dragMeal = null;
+      dragActive = false;
+    }
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  });
+}
+
+function getClientXY(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function getScreen() { return document.getElementById('screen'); }
+
+function closeOverlay() {
+  const o = document.getElementById('overlay');
+  if (o) o.remove();
+}
+
+function sheetOverlay(html, onReady) {
+  closeOverlay();
+  const o = document.createElement('div');
+  o.id = 'overlay';
+  o.className = 'sheet-overlay';
+  o.innerHTML = `<div class="sheet" id="sheet">${html}</div>`;
+  getScreen().appendChild(o);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('sheet').classList.add('open');
+  }));
+  o.addEventListener('click', e => { if (e.target === o) closeOverlay(); });
+  if (onReady) onReady();
+}
+
+function promptOverlay(html, onReady) {
+  closeOverlay();
+  const o = document.createElement('div');
+  o.id = 'overlay';
+  o.className = 'prompt-overlay';
+  o.innerHTML = `<div class="prompt-box">${html}</div>`;
+  getScreen().appendChild(o);
+  if (onReady) onReady();
+}
+
+function menuOverlay(html, onReady) {
+  closeOverlay();
+  const o = document.createElement('div');
+  o.id = 'overlay';
+  o.className = 'menu-overlay';
+  o.innerHTML = html;
+  getScreen().appendChild(o);
+  o.addEventListener('click', e => { if (e.target === o) closeOverlay(); });
+  if (onReady) onReady();
+}
+
+// ─────────────────────────────────────────────
+// ADD MEAL SHEET
+// ─────────────────────────────────────────────
+const FOOD_EMOJIS = [
+  '🍛','🍝','🍜','🍲','🥘','🫕','🍱','🥗',
+  '🌮','🌯','🥙','🫔','🍔','🍟','🌭','🥪',
+  '🍣','🍤','🐟','🦐','🦑','🦞','🦀','🍗',
+  '🥩','🍖','🥓','🍳','🥚','🧆','🧇','🥞',
+  '🥣','🍚','🍙','🍘','🥟','🫙','🍠','🥕',
+  '🥦','🥬','🥑','🍅','🫛','🫚','🧀','🥨',
+  '🍞','🥐','🫓','🥖','🥯','🧁','🍰','🎂'
+];
+
+function showAddMeal() {
+  let serves = 0;
+  let selectedEmoji = '🍽️';
+
+  const gridHtml = FOOD_EMOJIS.map((e, i) =>
+    `<div class="emoji-opt${i === 0 ? '' : ''}" data-emoji="${e}">${e}</div>`
+  ).join('');
+
+  sheetOverlay(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Add a meal to the Fridge Pool</div>
+    <div class="field">
+      <div class="field-label">Meal name</div>
+      <input id="fldName" class="field-input" type="text" placeholder="e.g. Thai curry" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <div class="field-label">Emoji</div>
+      <div class="emoji-grid" id="emojiGrid">${gridHtml}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Serves</div>
+      <div class="serves-row">
+        <div class="serves-btn" id="btnMinus">−</div>
+        <div class="serves-div-v"></div>
+        <div class="serves-val" id="servesVal">0</div>
+        <div class="serves-div-v"></div>
+        <div class="serves-btn" id="btnPlus">+</div>
+      </div>
+    </div>
+    <div class="submit-btn" id="btnSubmit">Add to fridge</div>
+  `, () => {
+    // Highlight first emoji by default
+    const firstOpt = document.querySelector('.emoji-opt');
+    if (firstOpt) { firstOpt.classList.add('selected'); selectedEmoji = firstOpt.dataset.emoji; }
+
+    document.querySelectorAll('.emoji-opt').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedEmoji = el.dataset.emoji;
+      });
+    });
+
+    document.getElementById('btnMinus').addEventListener('click', () => {
+      if (serves > 1) { serves--; document.getElementById('servesVal').textContent = serves; }
+    });
+    document.getElementById('btnPlus').addEventListener('click', () => {
+      if (serves < 20) { serves++; document.getElementById('servesVal').textContent = serves; }
+    });
+    document.getElementById('btnSubmit').addEventListener('click', () => {
+      const name = document.getElementById('fldName').value.trim();
+      if (!name) { document.getElementById('fldName').focus(); return; }
+      if (serves < 1) { return; }
+      S.meals.push({ id: uid(), name, emoji: selectedEmoji, totalServes: serves });
+      save();
+      closeOverlay();
+      renderPool();
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// PICKER SHEET
+// ─────────────────────────────────────────────
+function showPicker(key, type) {
+  const available = poolMeals();
+  const label = type.charAt(0).toUpperCase() + type.slice(1);
+
+  const fridgeMeals = poolMeals();
+  const freezerMeals = S.freezer.filter(m => m.serves > 0);
+  const allAvailable = fridgeMeals.length + freezerMeals.length;
+
+  if (allAvailable === 0) {
+    promptOverlay(`
+      <div class="prompt-title">Nothing available</div>
+      <div class="prompt-sub">Add meals to the fridge pool or freezer first.</div>
+      <div class="prompt-btns">
+        <div class="prompt-btn primary" id="btnOk">OK</div>
+      </div>
+    `, () => {
+      document.getElementById('btnOk').addEventListener('click', closeOverlay);
+    });
+    return;
+  }
+
+  const fridgeItems = fridgeMeals.map(m => `
+    <div class="picker-item" data-id="${m.id}" data-source="fridge">
+      <div class="picker-emoji">${m.emoji}</div>
+      <div class="picker-info">
+        <div class="picker-name">${m.name}</div>
+        <div class="picker-serves">${unassignedCount(m.id)} serve${unassignedCount(m.id) !== 1 ? 's' : ''} available</div>
+      </div>
+      <div class="picker-arrow">›</div>
+    </div>
+  `).join('');
+
+  const freezerItems = freezerMeals.map(m => `
+    <div class="picker-item" data-id="${m.id}" data-source="freezer">
+      <div class="picker-emoji">${m.emoji}</div>
+      <div class="picker-info">
+        <div class="picker-name">${m.name} <span class="freezer-badge">❄️ Freezer</span></div>
+        <div class="picker-serves">${m.serves} serve${m.serves !== 1 ? 's' : ''} available</div>
+      </div>
+      <div class="picker-arrow">›</div>
+    </div>
+  `).join('');
+
+  const sectionLabel = freezerMeals.length > 0 && fridgeMeals.length > 0
+    ? `<div class="picker-section-label">Fridge</div>${fridgeItems}<div class="picker-section-label">❄️ Freezer</div>${freezerItems}`
+    : fridgeItems + freezerItems;
+
+  sheetOverlay(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Pick a ${label}</div>
+    ${sectionLabel}
+  `, () => {
+    document.querySelectorAll('.picker-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const mealId = el.dataset.id;
+        const source = el.dataset.source;
+        if (!S.slots[key]) S.slots[key] = {};
+        S.slots[key].mealId = mealId;
+        S.slots[key].isStale = false;
+        S.slots[key].fromFreezer = source === 'freezer';
+        // If from freezer, decrement serve count
+        if (source === 'freezer') {
+          const fm = S.freezer.find(m => m.id === mealId);
+          if (fm) fm.serves = Math.max(0, fm.serves - 1);
+        }
+        save();
+        closeOverlay();
+        render();
+      });
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// FREEZER SHEET
+// ─────────────────────────────────────────────
+function showFreezer() {
+  const items = S.freezer.filter(m => m.serves > 0).map(m => `
+    <div class="picker-item freezer-item" data-id="${m.id}">
+      <div class="picker-emoji">${m.emoji}</div>
+      <div class="picker-info">
+        <div class="picker-name">${m.name}</div>
+        <div class="picker-serves">${m.serves} serve${m.serves !== 1 ? 's' : ''} left</div>
+      </div>
+      <div class="picker-arrow">›</div>
+    </div>
+  `).join('');
+
+  const emptyMsg = S.freezer.filter(m => m.serves > 0).length === 0
+    ? `<div class="picker-empty">Freezer is empty — tap + to add</div>` : '';
+
+  sheetOverlay(`
+    <div class="sheet-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+      <div class="sheet-title" style="margin-bottom:0">❄️ Freezer</div>
+      <div class="submit-btn" id="btnAddFreezer" style="width:auto;padding:10px 18px;margin-top:0;font-size:13px;">+ Add</div>
+    </div>
+    ${emptyMsg}
+    ${items}
+  `, () => {
+    document.getElementById('btnAddFreezer').addEventListener('click', () => {
+      closeOverlay();
+      showAddFreezerMeal();
+    });
+
+    document.querySelectorAll('.freezer-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const meal = S.freezer.find(m => m.id === el.dataset.id);
+        if (!meal) return;
+        closeOverlay();
+        promptOverlay(`
+          <div class="prompt-title">Eating this now?</div>
+          <div class="prompt-sub">${meal.emoji} ${meal.name}</div>
+          <div class="prompt-btns">
+            <div class="prompt-btn secondary" id="btnNoEat">Cancel</div>
+            <div class="prompt-btn primary" id="btnYesEat">Yes, eating it</div>
+          </div>
+        `, () => {
+          document.getElementById('btnNoEat').addEventListener('click', closeOverlay);
+          document.getElementById('btnYesEat').addEventListener('click', () => {
+            meal.serves = Math.max(0, meal.serves - 1);
+            if (meal.serves === 0) S.freezer = S.freezer.filter(m => m.id !== meal.id);
+            save(); closeOverlay(); render();
+          });
+        });
+      });
+
+      longPress(el, () => {
+        const meal = S.freezer.find(m => m.id === el.dataset.id);
+        if (!meal) return;
+        closeOverlay();
+        promptOverlay(`
+          <div class="prompt-title">Remove from freezer?</div>
+          <div class="prompt-sub">${meal.emoji} ${meal.name} will be removed entirely.</div>
+          <div class="prompt-btns">
+            <div class="prompt-btn secondary" id="btnCancelF">Cancel</div>
+            <div class="prompt-btn danger" id="btnConfirmF">Remove</div>
+          </div>
+        `, () => {
+          document.getElementById('btnCancelF').addEventListener('click', closeOverlay);
+          document.getElementById('btnConfirmF').addEventListener('click', () => {
+            S.freezer = S.freezer.filter(m => m.id !== meal.id);
+            save(); closeOverlay(); render();
+          });
+        });
+      });
+    });
+  });
+}
+
+function showAddFreezerMeal() {
+  let serves = 0;
+  let selectedEmoji = '🧊';
+
+  const gridHtml = FOOD_EMOJIS.map((e) =>
+    `<div class="emoji-opt" data-emoji="${e}">${e}</div>`
+  ).join('');
+
+  sheetOverlay(`
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Add meal to Freezer</div>
+    <div class="field">
+      <div class="field-label">Meal name</div>
+      <input id="fldFName" class="field-input" type="text" placeholder="e.g. Lasagne" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <div class="field-label">Emoji</div>
+      <div class="emoji-grid" id="emojiGridF">${gridHtml}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Serves</div>
+      <div class="serves-row">
+        <div class="serves-btn" id="btnFMinus">−</div>
+        <div class="serves-div-v"></div>
+        <div class="serves-val" id="fServesVal">0</div>
+        <div class="serves-div-v"></div>
+        <div class="serves-btn" id="btnFPlus">+</div>
+      </div>
+    </div>
+    <div class="submit-btn" id="btnFSubmit">Add to freezer</div>
+  `, () => {
+    const firstOpt = document.querySelector('.emoji-opt');
+    if (firstOpt) { firstOpt.classList.add('selected'); selectedEmoji = firstOpt.dataset.emoji; }
+
+    document.querySelectorAll('.emoji-opt').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedEmoji = el.dataset.emoji;
+      });
+    });
+
+    document.getElementById('btnFMinus').addEventListener('click', () => {
+      if (serves > 0) { serves--; document.getElementById('fServesVal').textContent = serves; }
+    });
+    document.getElementById('btnFPlus').addEventListener('click', () => {
+      if (serves < 20) { serves++; document.getElementById('fServesVal').textContent = serves; }
+    });
+    document.getElementById('btnFSubmit').addEventListener('click', () => {
+      const name = document.getElementById('fldFName').value.trim();
+      if (!name || serves < 1) return;
+      S.freezer.push({ id: uid(), name, emoji: selectedEmoji, serves });
+      save(); closeOverlay(); render();
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// STALE PROMPT
+// ─────────────────────────────────────────────
+function showStalePrompt(key, meal) {
+  const slotData = S.slots[key];
+  const fromFreezer = slotData?.fromFreezer;
+
+  promptOverlay(`
+    <div class="prompt-title">Did you eat this?</div>
+    <div class="prompt-sub">${meal.emoji} ${meal.name}</div>
+    <div class="prompt-btns">
+      <div class="prompt-btn secondary" id="btnNotEaten">Not eaten</div>
+      <div class="prompt-btn primary" id="btnEaten">Eaten</div>
+    </div>
+  `, () => {
+    document.getElementById('btnEaten').addEventListener('click', () => {
+      if (fromFreezer) {
+        // Freezer serve already decremented when assigned — nothing more to do
+      } else {
+        const m = S.meals.find(m => m.id === meal.id);
+        if (m) {
+          m.totalServes = Math.max(0, m.totalServes - 1);
+          if (m.totalServes === 0) {
+            S.meals = S.meals.filter(x => x.id !== m.id);
+            Object.keys(S.slots).forEach(k => {
+              if (S.slots[k].mealId === m.id) delete S.slots[k];
+            });
+          }
+        }
+      }
+      delete S.slots[key];
+      save(); closeOverlay(); render();
+    });
+
+    document.getElementById('btnNotEaten').addEventListener('click', () => {
+      if (fromFreezer) {
+        // Return serve to freezer
+        const fm = S.freezer.find(m => m.id === meal.id);
+        if (fm) fm.serves += 1;
+      }
+      delete S.slots[key];
+      save(); closeOverlay(); render();
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// CLEAR PROMPT (long press)
+// ─────────────────────────────────────────────
+function showClearPrompt(key) {
+  const slotData = S.slots[key];
+  const fromFreezer = slotData?.fromFreezer;
+  const subText = fromFreezer ? "It'll go back to the freezer." : "It'll go back into your fridge.";
+
+  if (S.suppressPrompt) {
+    if (fromFreezer) {
+      const meal = S.meals.find(m => m.id === slotData?.mealId) || S.freezer.find(m => m.id === slotData?.mealId);
+      const fm = S.freezer.find(m => m.id === slotData?.mealId);
+      if (fm) fm.serves += 1;
+    }
+    delete S.slots[key];
+    save(); render();
+    return;
+  }
+
+  let dontShow = false;
+
+  promptOverlay(`
+    <div class="prompt-title">Clear this meal?</div>
+    <div class="prompt-sub">${subText}</div>
+    <label class="prompt-checkbox">
+      <input type="checkbox" id="chkDontShow">
+      Don't show this again
+    </label>
+    <div class="prompt-btns">
+      <div class="prompt-btn secondary" id="btnCancelClear">Cancel</div>
+      <div class="prompt-btn danger" id="btnConfirmClear">Clear</div>
+    </div>
+  `, () => {
+    document.getElementById('chkDontShow').addEventListener('change', e => { dontShow = e.target.checked; });
+    document.getElementById('btnCancelClear').addEventListener('click', closeOverlay);
+    document.getElementById('btnConfirmClear').addEventListener('click', () => {
+      if (dontShow) S.suppressPrompt = true;
+      if (fromFreezer) {
+        const fm = S.freezer.find(m => m.id === slotData?.mealId);
+        if (fm) fm.serves += 1;
+      }
+      delete S.slots[key];
+      save(); closeOverlay(); render();
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// POOL REMOVE (long press pool item)
+// ─────────────────────────────────────────────
+function showPoolRemove(meal) {
+  promptOverlay(`
+    <div class="prompt-title">Remove from fridge?</div>
+    <div class="prompt-sub">${meal.emoji} ${meal.name} will be removed entirely.</div>
+    <div class="prompt-btns">
+      <div class="prompt-btn secondary" id="btnCancelRemove">Cancel</div>
+      <div class="prompt-btn danger" id="btnConfirmRemove">Remove</div>
+    </div>
+  `, () => {
+    document.getElementById('btnCancelRemove').addEventListener('click', closeOverlay);
+    document.getElementById('btnConfirmRemove').addEventListener('click', () => {
+      Object.keys(S.slots).forEach(k => {
+        if (S.slots[k].mealId === meal.id) delete S.slots[k];
+      });
+      S.meals = S.meals.filter(m => m.id !== meal.id);
+      save(); closeOverlay(); render();
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// ··· MENU
+// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// THEMES
+// ─────────────────────────────────────────────
+const THEMES = {
+  espresso: {
+    '--bg':       '#0a0907', '--surface':  '#1e1610', '--surface2': '#261e14',
+    '--pool-bg':  '#080604', '--border':   '#36281a', '--border2':  '#46382a',
+    '--text1':    '#fff4e8', '--text2':    '#ecdcc8', '--text3':    '#b8a898',
+    '--text4':    '#6e5e50', '--accent':   '#F0841A', '--today-bg': '#F0841A',
+    '--today-txt':'#fff',    '--dh-bg':    '#261e14', '--dh-border':'#46382a',
+    '--slot-bg':  '#1e1610', '--slot-e':   '#16100a', '--stale-bg': '#2a1408',
+    '--stale-b':  '#5a2e10', '--stale-t':  '#d06848', '--drag-ov':  '#1a0e04',
+  },
+  'dark-grey': {
+    '--bg':       '#2e2e2e', '--surface':  '#383838', '--surface2': '#3e3e3e',
+    '--pool-bg':  '#222222', '--border':   '#444444', '--border2':  '#555555',
+    '--text1':    '#f0f0f0', '--text2':    '#e0e0e0', '--text3':    '#aaaaaa',
+    '--text4':    '#666666', '--accent':   '#aaaaaa', '--today-bg': '#f0f0f0',
+    '--today-txt':'#111',    '--dh-bg':    '#3e3e3e', '--dh-border':'#f0f0f0',
+    '--slot-bg':  '#383838', '--slot-e':   '#303030', '--stale-bg': '#3a2020',
+    '--stale-b':  '#664444', '--stale-t':  '#cc8888', '--drag-ov':  '#444',
+  },
+  'mid-grey': {
+    '--bg':       '#c8c4be', '--surface':  '#dedad4', '--surface2': '#e8e4de',
+    '--pool-bg':  '#b8b4ae', '--border':   '#aaaaaa', '--border2':  '#999999',
+    '--text1':    '#111111', '--text2':    '#222222', '--text3':    '#666666',
+    '--text4':    '#999999', '--accent':   '#444444', '--today-bg': '#444444',
+    '--today-txt':'#fff',    '--dh-bg':    '#ffffff', '--dh-border':'#111111',
+    '--slot-bg':  '#dedad4', '--slot-e':   '#ccc8c2', '--stale-bg': '#f0d8d8',
+    '--stale-b':  '#cc9999', '--stale-t':  '#993333', '--drag-ov':  '#e0e0e0',
+  },
+  'light-grey': {
+    '--bg':       '#e8e8e8', '--surface':  '#f0f0f0', '--surface2': '#f8f8f8',
+    '--pool-bg':  '#dddddd', '--border':   '#bbbbbb', '--border2':  '#cccccc',
+    '--text1':    '#111111', '--text2':    '#222222', '--text3':    '#777777',
+    '--text4':    '#aaaaaa', '--accent':   '#111111', '--today-bg': '#111111',
+    '--today-txt':'#fff',    '--dh-bg':    '#ffffff', '--dh-border':'#111111',
+    '--slot-bg':  '#f0f0f0', '--slot-e':   '#e0e0e0', '--stale-bg': '#fde8e8',
+    '--stale-b':  '#f0b8b8', '--stale-t':  '#c05050', '--drag-ov':  '#e8e8e8',
+  }
+};
+
+function applyTheme(name) {
+  S.theme = name;
+  const t = THEMES[name] || THEMES.espresso;
+  const root = document.getElementById('screen');
+  Object.entries(t).forEach(([k, v]) => root.style.setProperty(k, v));
+
+  // Update theme option UI
+  document.querySelectorAll('.theme-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.theme === name);
+  });
+
+  // Update drawer bg to match surface
+  document.getElementById('drawer').style.background = t['--surface'];
+  document.getElementById('drawer').style.borderLeftColor = t['--border'];
+}
+
+// ─────────────────────────────────────────────
+// DRAWER
+// ─────────────────────────────────────────────
+let drawerOpen = false;
+
+function openDrawer() {
+  drawerOpen = true;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('main-view').classList.add('drawer-open');
+  updateDrawerResetBtn();
+}
+
+function closeDrawer() {
+  drawerOpen = false;
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('main-view').classList.remove('drawer-open');
+}
+
+function updateDrawerResetBtn() {
+  const el = document.getElementById('dResetPrompt');
+  if (el) el.classList.toggle('disabled', !S.suppressPrompt);
+}
+
+document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+
+// Swipe left on main view to open
+const mainView = document.getElementById('main-view');
+let tStartX = 0, tStartY = 0, tTracking = false;
+
+mainView.addEventListener('touchstart', e => {
+  if (document.getElementById('overlay')) return;
+  tStartX = e.touches[0].clientX;
+  tStartY = e.touches[0].clientY;
+  tTracking = true;
+}, { passive: true });
+
+mainView.addEventListener('touchmove', e => {
+  if (!tTracking) return;
+  const dx = e.touches[0].clientX - tStartX;
+  const dy = e.touches[0].clientY - tStartY;
+  if (Math.abs(dy) > Math.abs(dx) * 1.5) tTracking = false;
+}, { passive: true });
+
+mainView.addEventListener('touchend', e => {
+  if (!tTracking) return;
+  tTracking = false;
+  const dx = e.changedTouches[0].clientX - tStartX;
+  if (!drawerOpen && dx < -60) openDrawer();
+  if (drawerOpen && dx > 60) closeDrawer();
+});
+
+// Swipe right on drawer to close
+const drawerEl = document.getElementById('drawer');
+let dStartX = 0;
+drawerEl.addEventListener('touchstart', e => { dStartX = e.touches[0].clientX; }, { passive: true });
+drawerEl.addEventListener('touchend', e => {
+  if (drawerOpen && e.changedTouches[0].clientX - dStartX > 60) closeDrawer();
+});
+
+// Theme selection
+document.querySelectorAll('.theme-opt').forEach(el => {
+  el.addEventListener('click', () => {
+    applyTheme(el.dataset.theme);
+    save();
+  });
+});
+
+// Drawer action items
+document.getElementById('dClearWeek').addEventListener('click', () => {
+  closeDrawer();
+  promptOverlay(`
+    <div class="prompt-title">Clear this week?</div>
+    <div class="prompt-sub">All meals go back to the fridge.</div>
+    <div class="prompt-btns">
+      <div class="prompt-btn secondary" id="btnCancelWeek">Cancel</div>
+      <div class="prompt-btn danger" id="btnConfirmWeek">Clear week</div>
+    </div>
+  `, () => {
+    document.getElementById('btnCancelWeek').addEventListener('click', closeOverlay);
+    document.getElementById('btnConfirmWeek').addEventListener('click', () => {
+      const mon = getMonday(S.weekOffset);
+      for (let i = 0; i < 7; i++) {
+        const d = toStr(addDays(mon, i));
+        TYPES.forEach(t => delete S.slots[slotKey(d, t)]);
+      }
+      save(); closeOverlay(); render();
+    });
+  });
+});
+
+document.getElementById('dResetPool').addEventListener('click', () => {
+  closeDrawer();
+  promptOverlay(`
+    <div class="prompt-title">Reset fridge pool?</div>
+    <div class="prompt-sub">All meals and assignments will be removed.</div>
+    <div class="prompt-btns">
+      <div class="prompt-btn secondary" id="btnCancelPool">Cancel</div>
+      <div class="prompt-btn danger" id="btnConfirmPool">Reset</div>
+    </div>
+  `, () => {
+    document.getElementById('btnCancelPool').addEventListener('click', closeOverlay);
+    document.getElementById('btnConfirmPool').addEventListener('click', () => {
+      S.meals = []; S.slots = {};
+      save(); closeOverlay(); render();
+    });
+  });
+});
+
+document.getElementById('dResetPrompt').addEventListener('click', () => {
+  if (!S.suppressPrompt) return;
+  S.suppressPrompt = false;
+  save(); updateDrawerResetBtn();
+});
+
+// ── Export
+document.getElementById('dExport').addEventListener('click', () => {
+  const data = {
+    meals: S.meals,
+    freezer: S.freezer,
+    slots: S.slots,
+    suppressPrompt: S.suppressPrompt,
+    theme: S.theme,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `forforkssake-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeDrawer();
+});
+
+// ── Import
+document.getElementById('dImport').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      closeDrawer();
+      promptOverlay(`
+        <div class="prompt-title">Import data?</div>
+        <div class="prompt-sub">This will replace your current meals and plan.</div>
+        <div class="prompt-btns">
+          <div class="prompt-btn secondary" id="btnCancelImport">Cancel</div>
+          <div class="prompt-btn primary" id="btnConfirmImport">Import</div>
+        </div>
+      `, () => {
+        document.getElementById('btnCancelImport').addEventListener('click', closeOverlay);
+        document.getElementById('btnConfirmImport').addEventListener('click', () => {
+          S.meals = data.meals || [];
+          S.freezer = data.freezer || [];
+          S.slots = data.slots || {};
+          S.suppressPrompt = data.suppressPrompt || false;
+          S.theme = data.theme || 'espresso';
+          save();
+          applyTheme(S.theme);
+          closeOverlay();
+          render();
+        });
+      });
+    } catch {
+      promptOverlay(`
+        <div class="prompt-title">Invalid file</div>
+        <div class="prompt-sub">That file couldn't be read. Make sure it's a valid For Fork's Sake export.</div>
+        <div class="prompt-btns">
+          <div class="prompt-btn primary" id="btnBadFile">OK</div>
+        </div>
+      `, () => {
+        document.getElementById('btnBadFile').addEventListener('click', closeOverlay);
+      });
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ─────────────────────────────────────────────
+// DRAG AND DROP (pool → slot)
+// ─────────────────────────────────────────────
+let drag = null; // { meal, ghost }
+
+function initDrag(itemEl, meal) {
+  itemEl.addEventListener('touchstart', e => {
+    if (itemEl.classList.contains('phantom')) return;
+    const t = e.touches[0];
+
+    // Create ghost
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost';
+    ghost.innerHTML = `<div class="pool-emoji">${meal.emoji}</div><div class="pool-name">${meal.name}</div>`;
+    document.body.appendChild(ghost);
+    moveGhost(ghost, t.clientX, t.clientY);
+
+    drag = { meal, ghost };
+    itemEl.style.opacity = '0.35';
+
+    e.preventDefault();
+  }, { passive: false });
+
+  itemEl.addEventListener('touchmove', e => {
+    if (!drag) return;
+    const t = e.touches[0];
+    moveGhost(drag.ghost, t.clientX, t.clientY);
+
+    // Highlight slot under finger
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('drop-target'));
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const slot = el?.closest('.slot.empty');
+    if (slot) slot.classList.add('drop-target');
+
+    e.preventDefault();
+  }, { passive: false });
+
+  itemEl.addEventListener('touchend', e => {
+    if (!drag) return;
+    const t = e.changedTouches[0];
+
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('drop-target'));
+
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const slotEl = el?.closest('.slot.empty');
+
+    if (slotEl) {
+      const key = slotEl.dataset.key;
+      const type = slotEl.dataset.type;
+      if (key && unassignedCount(drag.meal.id) > 0) {
+        if (!S.slots[key]) S.slots[key] = {};
+        S.slots[key].mealId = drag.meal.id;
+        S.slots[key].isStale = false;
+        save();
+        render();
+      }
+    }
+
+    drag.ghost.remove();
+    itemEl.style.opacity = '';
+    drag = null;
+  });
+}
+
+function moveGhost(ghost, x, y) {
+  ghost.style.left = x + 'px';
+  ghost.style.top = y + 'px';
+}
+
+// ─────────────────────────────────────────────
+// EVENT LISTENERS
+// ─────────────────────────────────────────────
+document.getElementById('btnPrev').addEventListener('click', () => { S.weekOffset--; render(); });
+document.getElementById('btnNext').addEventListener('click', () => { S.weekOffset++; render(); });
+document.getElementById('btnPoolAdd').addEventListener('click', showAddMeal);
+document.getElementById('btnMore').addEventListener('click', openDrawer);
+document.getElementById('btnFreezer').addEventListener('click', showFreezer);
+
+// ─────────────────────────────────────────────
+// CLEAN OLD WEEKS
+// ─────────────────────────────────────────────
+function cleanOldSlots() {
+  const cutoff = toStr(getMonday(0));
+  Object.keys(S.slots).forEach(key => {
+    if (dateFromKey(key) < cutoff) delete S.slots[key];
+  });
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+load();
+cleanOldSlots();
+checkStale();
+applyTheme(S.theme);
+render();
+</script>
+</body>
+</html>
